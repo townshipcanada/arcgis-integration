@@ -13,7 +13,9 @@ Convert Canadian legal land descriptions (DLS, NTS, Geographic Townships) to GPS
 ## Requirements
 
 - ArcGIS Pro 3.2 or later (tested up to 3.7)
-- Township Canada API key ([get one here](https://townshipcanada.com/developers))
+- Township Canada API key — trial or paid:
+  - **Trial key** (free, 7 days): [get one here](https://townshipcanada.com/api/try?ref=arcgis-pro)
+  - **Paid key**: [townshipcanada.com/developers](https://townshipcanada.com/developers)
 - Internet connection
 
 ## Installation
@@ -85,19 +87,32 @@ To use Township Canada in the ArcGIS Pro search bar:
 
 ## API Key
 
-Get your API key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
+Get a free trial key at [townshipcanada.com/api/try?ref=arcgis-pro](https://townshipcanada.com/api/try?ref=arcgis-pro) or a paid key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
+
+Both trial and paid keys work with all toolbox features. Trial keys are valid for 7 days with a limited number of API calls.
 
 | Tier         | Requests/mo | Price   |
 | ------------ | ----------- | ------- |
+| Trial        | 100         | Free    |
 | Starter      | 1,000       | $20/mo  |
 | Professional | 10,000      | $100/mo |
 | Enterprise   | 100,000     | $500/mo |
+
+## Error Codes
+
+| Status | Meaning              | Action                                                  |
+| ------ | -------------------- | ------------------------------------------------------- |
+| 401    | Invalid API key      | Check that your API key is correct                     |
+| 403    | Trial expired        | Trial period ended — upgrade to a paid key              |
+| 429    | Trial limit reached  | Usage limit exceeded — upgrade or wait for next period  |
 
 ## Troubleshooting
 
 **"API key not configured"**: Run the Configure API Key tool or set the `TOWNSHIP_CANADA_API_KEY` environment variable.
 
-**"Could not connect to Township Canada API"**: Check your internet connection and firewall settings. The tool needs HTTPS access to `developer.townshipcanada.com`.
+**"Could not connect to Township Canada API"**: Check your internet connection and firewall settings. The tool needs HTTPS access to `developer.townshipcanada.com` (paid keys) or `townshipcanada.com` (trial keys).
+
+**"Trial expired" or "Trial limit reached"**: Your trial key has expired or reached its usage limit. Upgrade to a paid key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
 
 **Slow batch conversion**: The tool makes one API call per description. For large datasets (1,000+), consider using the [Township Canada Python SDK](https://pypi.org/project/townshipcanada/) with batch endpoints for better throughput.
 

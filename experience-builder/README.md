@@ -13,7 +13,9 @@ A custom widget for ArcGIS Experience Builder that lets users convert Canadian l
 ## Requirements
 
 - ArcGIS Experience Builder 1.14+
-- Township Canada API key ([get one here](https://townshipcanada.com/developers))
+- Township Canada API key — trial or paid:
+  - **Trial key** (free, 7 days): [get one here](https://townshipcanada.com/api/try?ref=arcgis-exb)
+  - **Paid key**: [townshipcanada.com/developers](https://townshipcanada.com/developers)
 
 ## Installation
 
@@ -55,6 +57,14 @@ After adding the widget to your experience:
 | LSD (Legal Subdivision)           | AB, SK, MB  | `10-36-42-3-W5`      |
 | NTS (National Topographic System) | BC          | `A-2-F/93-P-8`       |
 | Geographic Townships              | ON          | `Lot 2 Con 4 Osprey` |
+
+## Error Codes
+
+| Status | Meaning              | Action                                                  |
+| ------ | -------------------- | ------------------------------------------------------- |
+| 401    | Invalid API key      | Check that your API key is correct                     |
+| 403    | Trial expired        | Trial period ended — upgrade to a paid key              |
+| 429    | Trial limit reached  | Usage limit exceeded — upgrade or wait for next period  |
 
 ## License
 

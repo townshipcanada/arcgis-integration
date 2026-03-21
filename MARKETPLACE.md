@@ -80,7 +80,7 @@ Subscription — requires a Township Canada API key.
 | Professional | 10,000      | $100/mo |
 | Enterprise   | 100,000     | $500/mo |
 
-Free trial available at townshipcanada.com/developers.
+Free 7-day trial available at [townshipcanada.com/api/try?ref=arcgis](https://townshipcanada.com/api/try?ref=arcgis).
 
 ## Screenshots Required
 
@@ -114,7 +114,7 @@ https://townshipcanada.com/support
 
 ## Technical Requirements
 
-- Internet connection (HTTPS access to developer.townshipcanada.com)
+- Internet connection (HTTPS access to developer.townshipcanada.com and townshipcanada.com)
 - Township Canada API key
 - ArcGIS Pro 3.2+ with Python 3.9+ (for Pro toolbox)
 - ArcGIS Experience Builder 1.14+ (for online widget)
