@@ -1,0 +1,156 @@
+{
+  "name": "Township Canada — Survey123 DLS/NTS Conversion",
+  "description": "Converts legal land descriptions submitted via Survey123 to GPS coordinates using the Township Canada API, then updates the feature layer with the results.",
+  "version": 1,
+  "modules": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "name": "Survey123 Webhook",
+      "description": "Receives new Survey123 submissions containing a legal land description.",
+      "parameters": {
+        "name": "Survey123 - Township Canada",
+        "dataStructure": [
+          {
+            "name": "objectId",
+            "type": "number",
+            "label": "Object ID",
+            "required": true
+          },
+          {
+            "name": "legal_description",
+            "type": "text",
+            "label": "Legal Land Description",
+            "required": true
+          },
+          {
+            "name": "description_type",
+            "type": "text",
+            "label": "Description Type",
+            "required": false
+          },
+          {
+            "name": "featureServiceUrl",
+            "type": "text",
+            "label": "Feature Service URL",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "http:ActionSendData",
+      "name": "Township Canada API — Search",
+      "description": "Calls the Township Canada API to convert the legal land description to coordinates.",
+      "parameters": {
+        "method": "GET",
+        "url": "https://developer.townshipcanada.com/search/legal-location",
+        "qs": [
+          {
+            "name": "location",
+            "value": "{{1.legal_description}}"
+          }
+        ],
+        "headers": [
+          {
+            "name": "X-API-Key",
+            "value": "{{env.TOWNSHIP_CANADA_API_KEY}}"
+          },
+          {
+            "name": "Accept",
+            "value": "application/json"
+          },
+          {
+            "name": "User-Agent",
+            "value": "townshipcanada-make-survey123/1.0.0"
+          }
+        ],
+        "parseResponse": true,
+        "timeout": 30
+      }
+    },
+    {
+      "id": 3,
+      "module": "json:ParseJSON",
+      "name": "Parse API Response",
+      "description": "Extracts coordinates and metadata from the GeoJSON FeatureCollection response.",
+      "parameters": {
+        "json": "{{2.data}}",
+        "dataStructure": [
+          {
+            "name": "features",
+            "type": "array",
+            "spec": [
+              {
+                "name": "geometry",
+                "type": "collection",
+                "spec": [
+                  {
+                    "name": "type",
+                    "type": "text"
+                  },
+                  {
+                    "name": "coordinates",
+                    "type": "array"
+                  }
+                ]
+              },
+              {
+                "name": "properties",
+                "type": "collection",
+                "spec": [
+                  {
+                    "name": "shape",
+                    "type": "text"
+                  },
+                  {
+                    "name": "legal_location",
+                    "type": "text"
+                  },
+                  {
+                    "name": "province",
+                    "type": "text"
+                  },
+                  {
+                    "name": "survey_system",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "The centroid feature (where properties.shape == 'centroid') contains the point coordinates. coordinates[0] = longitude, coordinates[1] = latitude."
+    },
+    {
+      "id": 4,
+      "module": "http:ActionSendData",
+      "name": "Update Feature Layer",
+      "description": "Writes the converted coordinates back to the ArcGIS Online feature layer.",
+      "parameters": {
+        "method": "POST",
+        "url": "{{1.featureServiceUrl}}/updateFeatures",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": "f=json&token={{env.ARCGIS_TOKEN}}&features=[{\"attributes\":{\"objectId\":{{1.objectId}},\"latitude\":{{3.features[1].geometry.coordinates[2]}},\"longitude\":{{3.features[1].geometry.coordinates[1]}},\"province\":\"{{3.features[1].properties.province}}\",\"conversion_status\":\"success\"},\"geometry\":{\"x\":{{3.features[1].geometry.coordinates[1]}},\"y\":{{3.features[1].geometry.coordinates[2]}},\"spatialReference\":{\"wkid\":4326}}}]",
+        "parseResponse": true,
+        "timeout": 30
+      },
+      "notes": "Replace env.ARCGIS_TOKEN with your ArcGIS Online token or use an OAuth connection. The feature array index [1] targets the centroid feature — adjust if your API response order differs."
+    }
+  ],
+  "scheduling": {
+    "type": "instant"
+  },
+  "environment": {
+    "TOWNSHIP_CANADA_API_KEY": "",
+    "ARCGIS_TOKEN": ""
+  },
+  "notes": "Setup: 1) Import this scenario into Make.com. 2) Set the TOWNSHIP_CANADA_API_KEY and ARCGIS_TOKEN environment variables. 3) Copy the webhook URL and paste it into your Survey123 webhook settings. 4) Test with a known legal land description like NW-36-42-3-W5."
+}

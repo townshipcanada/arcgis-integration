@@ -1,0 +1,21 @@
+{
+  "name": "township-canada-dls-converter",
+  "label": "Township Canada — DLS/NTS Converter",
+  "type": "widget",
+  "version": "1.0.0",
+  "exbVersion": "1.14.0",
+  "author": "Maps & Apps Inc.",
+  "description": "Convert Canadian legal land descriptions (DLS, NTS, Geographic Townships) to GPS coordinates in your ArcGIS Experience Builder apps. Search by legal land description and see results plotted on the map with boundary polygons.",
+  "copyright": "Copyright (c) Maps & Apps Inc.",
+  "license": "MIT",
+  "properties": {
+    "hasConfig": true,
+    "supportInlineEditing": false
+  },
+  "dependency": "jimu-core",
+  "translatedLocales": ["en"],
+  "defaultSize": {
+    "width": 360,
+    "height": 480
+  }
+}
