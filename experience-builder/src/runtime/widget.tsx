@@ -10,16 +10,15 @@ import { JimuMapViewComponent, type JimuMapView } from 'jimu-arcgis'
 import { TextInput, Button, Loading, Alert, Label, Switch } from 'jimu-ui'
 import { SearchOutlined } from 'jimu-icons/outlined/editor/search'
 import { PinEsriOutlined } from 'jimu-icons/outlined/gis/pin-esri'
-import { type IMConfig } from '../config'
+import { type IMConfig, TRIAL_API_BASE_URL, PAID_API_BASE_URL } from '../config'
 import Graphic from 'esri/Graphic'
 import Point from 'esri/geometry/Point'
 import Polygon from 'esri/geometry/Polygon'
 import SimpleFillSymbol from 'esri/symbols/SimpleFillSymbol'
 import SimpleMarkerSymbol from 'esri/symbols/SimpleMarkerSymbol'
+import GraphicsLayer from 'esri/layers/GraphicsLayer'
 
-const API_BASE_URL = 'https://developer.townshipcanada.com'
-
-interface SearchResult {
+interface TownshipCanadaSearchResult {
   legalLocation: string
   latitude: number
   longitude: number
@@ -28,9 +27,9 @@ interface SearchResult {
   boundary: any | null
 }
 
-interface WidgetState {
+interface TownshipCanadaWidgetState {
   query: string
-  result: SearchResult | null
+  result: TownshipCanadaSearchResult | null
   suggestions: string[]
   isLoading: boolean
   error: string | null
@@ -38,7 +37,7 @@ interface WidgetState {
 }
 
 const style = css`
-  .township-widget {
+  .township-canada-widget {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -46,7 +45,7 @@ const style = css`
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  .township-header {
+  .township-canada-header {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -54,23 +53,23 @@ const style = css`
     border-bottom: 1px solid #e5e7eb;
   }
 
-  .township-header h3 {
+  .township-canada-header h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
     color: #1a3d2e;
   }
 
-  .township-search-form {
+  .township-canada-search-form {
     display: flex;
     gap: 8px;
   }
 
-  .township-search-form .search-input {
+  .township-canada-search-form .search-input {
     flex: 1;
   }
 
-  .township-suggestions {
+  .township-canada-suggestions {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -80,25 +79,25 @@ const style = css`
     overflow-y: auto;
   }
 
-  .township-suggestions li {
+  .township-canada-suggestions li {
     padding: 8px 12px;
     cursor: pointer;
     font-size: 13px;
     font-family: 'Consolas', 'Monaco', monospace;
   }
 
-  .township-suggestions li:hover {
+  .township-canada-suggestions li:hover {
     background: #f0fdf4;
   }
 
-  .township-result {
+  .township-canada-result {
     border: 1px solid #d1fae5;
     border-radius: 8px;
     padding: 12px;
     background: #f0fdf4;
   }
 
-  .township-result h4 {
+  .township-canada-result h4 {
     margin: 0 0 8px 0;
     font-size: 15px;
     font-weight: 600;
@@ -106,20 +105,20 @@ const style = css`
     font-family: 'Consolas', 'Monaco', monospace;
   }
 
-  .township-result-grid {
+  .township-canada-result-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-top: 8px;
   }
 
-  .township-result-item {
+  .township-canada-result-item {
     background: white;
     border-radius: 6px;
     padding: 8px;
   }
 
-  .township-result-item .label {
+  .township-canada-result-item .label {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -127,14 +126,14 @@ const style = css`
     margin-bottom: 2px;
   }
 
-  .township-result-item .value {
+  .township-canada-result-item .value {
     font-size: 13px;
     font-weight: 500;
     color: #1f2937;
     font-family: 'Consolas', 'Monaco', monospace;
   }
 
-  .township-reverse-hint {
+  .township-canada-reverse-hint {
     font-size: 12px;
     color: #6b7280;
     text-align: center;
@@ -143,7 +142,7 @@ const style = css`
     border-radius: 6px;
   }
 
-  .township-footer {
+  .township-canada-footer {
     font-size: 11px;
     color: #9ca3af;
     text-align: center;
@@ -151,7 +150,7 @@ const style = css`
     border-top: 1px solid #e5e7eb;
   }
 
-  .township-footer a {
+  .township-canada-footer a {
     color: #4a7c59;
     text-decoration: none;
   }
@@ -159,7 +158,7 @@ const style = css`
 
 export default class TownshipCanadaWidget extends React.PureComponent<
   AllWidgetProps<IMConfig>,
-  WidgetState
+  TownshipCanadaWidgetState
 > {
   private jimuMapView: JimuMapView | null = null
   private graphicsLayer: __esri.GraphicsLayer | null = null
@@ -185,13 +184,19 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     }
   }
 
+  private getApiBaseUrl (): string {
+    const isTrialKey = this.props.config?.isTrialKey ?? true
+    return isTrialKey ? TRIAL_API_BASE_URL : PAID_API_BASE_URL
+  }
+
   private async apiRequest (endpoint: string, params: Record<string, string>): Promise<any> {
     const apiKey = this.props.config?.apiKey
     if (!apiKey) {
       throw new Error('API key not configured. Open widget settings to add your Township Canada API key.')
     }
 
-    const url = new URL(API_BASE_URL + endpoint)
+    const baseUrl = this.getApiBaseUrl()
+    const url = new URL(baseUrl + endpoint)
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.set(key, value)
     })
@@ -212,7 +217,7 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     return response.json()
   }
 
-  private parseFeatureCollection (fc: any): SearchResult | null {
+  private parseFeatureCollection (fc: any): TownshipCanadaSearchResult | null {
     const features = fc?.features || []
     const centroid = features.find((f: any) => f.properties?.shape === 'centroid')
     const grid = features.find((f: any) => f.properties?.shape === 'grid')
@@ -283,8 +288,8 @@ export default class TownshipCanadaWidget extends React.PureComponent<
         .map((f: any) => f.properties?.legal_location)
         .filter(Boolean)
       this.setState({ suggestions })
-    } catch {
-      // Silently fail on autocomplete errors
+    } catch (err: any) {
+      console.error('Township Canada autocomplete error:', err.message)
     }
   }
 
@@ -294,7 +299,7 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     })
   }
 
-  private plotResult (result: SearchResult): void {
+  private plotResult (result: TownshipCanadaSearchResult): void {
     if (!this.jimuMapView?.view) return
 
     const view = this.jimuMapView.view
@@ -303,7 +308,6 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     if (this.graphicsLayer) {
       this.graphicsLayer.removeAll()
     } else {
-      const GraphicsLayer = require('esri/layers/GraphicsLayer')
       this.graphicsLayer = new GraphicsLayer({ title: 'Township Canada Results' })
       view.map.add(this.graphicsLayer)
     }
@@ -356,8 +360,8 @@ export default class TownshipCanadaWidget extends React.PureComponent<
         })
 
         this.graphicsLayer.add(new Graphic({ geometry: polygon, symbol: fillSymbol }))
-      } catch {
-        // Skip invalid boundary geometries
+      } catch (err: any) {
+        console.error('Township Canada boundary rendering error:', err.message)
       }
     }
 
@@ -420,14 +424,14 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     const config = this.props.config
 
     return (
-      <div className="township-widget" css={style}>
-        <div className="township-header">
+      <div className="township-canada-widget" css={style}>
+        <div className="township-canada-header">
           <PinEsriOutlined size="m" />
           <h3>Township Canada</h3>
         </div>
 
         {/* Search form */}
-        <div className="township-search-form">
+        <div className="township-canada-search-form">
           <TextInput
             className="search-input"
             placeholder="e.g. NW-36-42-3-W5"
@@ -448,7 +452,7 @@ export default class TownshipCanadaWidget extends React.PureComponent<
 
         {/* Autocomplete suggestions */}
         {suggestions.length > 0 && (
-          <ul className="township-suggestions">
+          <ul className="township-canada-suggestions">
             {suggestions.map((s) => (
               <li key={s} onClick={() => this.handleSuggestionClick(s)}>
                 {s}
@@ -466,7 +470,7 @@ export default class TownshipCanadaWidget extends React.PureComponent<
         )}
 
         {reverseMode && (
-          <div className="township-reverse-hint">
+          <div className="township-canada-reverse-hint">
             Click anywhere on the map to find the legal land description at that location.
           </div>
         )}
@@ -479,22 +483,22 @@ export default class TownshipCanadaWidget extends React.PureComponent<
 
         {/* Result */}
         {result && !isLoading && (
-          <div className="township-result">
+          <div className="township-canada-result">
             <h4>{result.legalLocation}</h4>
-            <div className="township-result-grid">
-              <div className="township-result-item">
+            <div className="township-canada-result-grid">
+              <div className="township-canada-result-item">
                 <div className="label">Latitude</div>
                 <div className="value">{result.latitude.toFixed(6)}</div>
               </div>
-              <div className="township-result-item">
+              <div className="township-canada-result-item">
                 <div className="label">Longitude</div>
                 <div className="value">{result.longitude.toFixed(6)}</div>
               </div>
-              <div className="township-result-item">
+              <div className="township-canada-result-item">
                 <div className="label">Province</div>
                 <div className="value">{result.province}</div>
               </div>
-              <div className="township-result-item">
+              <div className="township-canada-result-item">
                 <div className="label">Survey System</div>
                 <div className="value">{result.surveySystem}</div>
               </div>
@@ -510,7 +514,7 @@ export default class TownshipCanadaWidget extends React.PureComponent<
           />
         )}
 
-        <div className="township-footer">
+        <div className="township-canada-footer">
           Powered by <a href="https://townshipcanada.com" target="_blank" rel="noopener noreferrer">Township Canada</a>
         </div>
       </div>

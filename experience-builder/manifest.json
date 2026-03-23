@@ -12,7 +12,7 @@
     "hasConfig": true,
     "supportInlineEditing": false
   },
-  "dependency": "jimu-core",
+  "dependency": ["jimu-core", "jimu-arcgis"],
   "translatedLocales": ["en"],
   "defaultSize": {
     "width": 360,

@@ -138,11 +138,11 @@
             "value": "application/x-www-form-urlencoded"
           }
         ],
-        "body": "f=json&token={{env.ARCGIS_TOKEN}}&features=[{\"attributes\":{\"objectId\":{{1.objectId}},\"latitude\":{{3.features[1].geometry.coordinates[2]}},\"longitude\":{{3.features[1].geometry.coordinates[1]}},\"province\":\"{{3.features[1].properties.province}}\",\"conversion_status\":\"success\"},\"geometry\":{\"x\":{{3.features[1].geometry.coordinates[1]}},\"y\":{{3.features[1].geometry.coordinates[2]}},\"spatialReference\":{\"wkid\":4326}}}]",
+        "body": "f=json&token={{env.ARCGIS_TOKEN}}&features=[{\"attributes\":{\"objectId\":{{1.objectId}},\"latitude\":{{3.features[1].geometry.coordinates[1]}},\"longitude\":{{3.features[1].geometry.coordinates[0]}},\"province\":\"{{3.features[1].properties.province}}\",\"conversion_status\":\"success\"},\"geometry\":{\"x\":{{3.features[1].geometry.coordinates[0]}},\"y\":{{3.features[1].geometry.coordinates[1]}},\"spatialReference\":{\"wkid\":4326}}}]",
         "parseResponse": true,
         "timeout": 30
       },
-      "notes": "Replace env.ARCGIS_TOKEN with your ArcGIS Online token or use an OAuth connection. The feature array index [1] targets the centroid feature — adjust if your API response order differs."
+      "notes": "Replace env.ARCGIS_TOKEN with your ArcGIS Online token or use an OAuth connection. The feature array index [1] assumes the centroid feature (properties.shape == 'centroid') is the second element in the features array. GeoJSON coordinates are [longitude, latitude]: coordinates[0] = longitude, coordinates[1] = latitude. Adjust the index if your API response order differs."
     }
   ],
   "scheduling": {

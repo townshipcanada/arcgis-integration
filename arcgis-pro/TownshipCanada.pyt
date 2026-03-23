@@ -22,8 +22,8 @@ from township_canada_locator import (
     ConfigureAPIKey,
     TownshipCanadaGeoprocessingTool,
     TownshipCanadaLocator,
-    _api_request,
-    _parse_feature_collection,
+    _township_canada_api_request,
+    _parse_township_canada_feature_collection,
 )
 
 
@@ -32,23 +32,23 @@ class Toolbox:
         self.label = "Township Canada"
         self.alias = "townshipcanada"
         self.tools = [
-            ConfigureAPIKeyTool,
-            BatchConvertTool,
-            SearchTool,
+            TownshipCanadaConfigureAPIKeyTool,
+            TownshipCanadaBatchConvertTool,
+            TownshipCanadaSearchTool,
         ]
 
 
-class ConfigureAPIKeyTool(ConfigureAPIKey):
+class TownshipCanadaConfigureAPIKeyTool(ConfigureAPIKey):
     """Wrapper for the ConfigureAPIKey tool."""
     pass
 
 
-class BatchConvertTool(TownshipCanadaGeoprocessingTool):
+class TownshipCanadaBatchConvertTool(TownshipCanadaGeoprocessingTool):
     """Wrapper for the batch conversion tool."""
     pass
 
 
-class SearchTool:
+class TownshipCanadaSearchTool:
     """Search for a single legal land description and add the result to the map."""
 
     def __init__(self):

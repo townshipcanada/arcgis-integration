@@ -97,8 +97,9 @@ Import the provided `make-scenario.json` blueprint into Make.com, or build it ma
 
 - Parse the GeoJSON FeatureCollection response
 - The centroid feature (`properties.shape == "centroid"`) contains the point coordinates
-- Extract `features[1].geometry.coordinates[0]` (longitude) and `features[1].geometry.coordinates[1]` (latitude)
+- Extract `features[1].geometry.coordinates[0]` (longitude) and `features[1].geometry.coordinates[1]` (latitude). GeoJSON uses `[longitude, latitude]` order.
 - Extract `features[1].properties.province`
+- **Note:** The index `[1]` assumes the centroid feature (`properties.shape == "centroid"`) is the second element. Adjust if your response order differs.
 
 #### Module 4: HTTP Request (Update feature layer)
 
