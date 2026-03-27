@@ -42,7 +42,7 @@
       "id": 2,
       "module": "http:ActionSendData",
       "name": "Township Canada API — Search",
-      "description": "Calls the Township Canada API to convert the legal land description to coordinates. For trial keys, change the base URL from developer.townshipcanada.com to townshipcanada.com/api/integrations/trial (same paths and response format).",
+      "description": "Calls the Township Canada API to convert the legal land description to coordinates.",
       "parameters": {
         "method": "GET",
         "url": "https://developer.townshipcanada.com/search/legal-location",
@@ -122,7 +122,7 @@
           }
         ]
       },
-      "notes": "The centroid feature (where properties.shape == 'centroid') contains the point coordinates. coordinates[0] = longitude, coordinates[1] = latitude. If using a trial key with the trial endpoint, the response format differs — see README."
+      "notes": "The centroid feature (where properties.shape == 'centroid') contains the point coordinates. coordinates[0] = longitude, coordinates[1] = latitude."
     },
     {
       "id": 4,

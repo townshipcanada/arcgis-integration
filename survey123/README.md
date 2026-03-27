@@ -88,10 +88,9 @@ Import the provided `make-scenario.json` blueprint into Make.com, or build it ma
 - **Query parameters**:
   - `location`: `{{1.legal_description}}`
 - **Headers**:
-  - `X-API-Key`: Your Township Canada API key (trial or paid)
+  - `X-API-Key`: Your Township Canada API key
   - `Accept`: `application/json`
 
-> For trial keys, change the base URL to `https://townshipcanada.com/api/integrations/trial` — the path and response format are identical.
 
 #### Module 3: Parse JSON
 
@@ -146,33 +145,31 @@ The `legal_description` field can then be a calculate type that concatenates the
 
 ## API Key
 
-Get a free trial key at [townshipcanada.com/api/try?ref=arcgis-survey123](https://townshipcanada.com/api/try?ref=arcgis-survey123) or a paid key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
-
-Both trial and paid keys work with this integration. Trial keys are valid for 7 days with a limited number of API calls.
+Get an API key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
 
 ## Environment Variables
 
 | Variable                  | Description                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------ |
-| `TOWNSHIP_CANADA_API_KEY` | Your Township Canada API key — trial or paid (used in Make.com HTTP module)    |
+| `TOWNSHIP_CANADA_API_KEY` | Your Township Canada API key (used in Make.com HTTP module)    |
 
 ## Error Codes
 
 | Status | Meaning              | Action                                                  |
 | ------ | -------------------- | ------------------------------------------------------- |
 | 401    | Invalid API key      | Check that your API key is correct                     |
-| 403    | Trial expired        | Trial period ended — upgrade to a paid key              |
-| 429    | Trial limit reached  | Usage limit exceeded — upgrade or wait for next period  |
+| 403    | Forbidden            | Check API key permissions                               |
+| 429    | Rate limit exceeded  | Rate limit exceeded — reduce request frequency or contact support |
 
 ## Troubleshooting
 
 **Webhook not firing**: Ensure the webhook is enabled in Survey123 settings and the target URL is correct.
 
-**API returns 401**: Check that your API key is valid. If using a trial key, ensure it hasn't expired.
+**API returns 401**: Check that your API key is valid.
 
-**API returns 403**: Your trial key has expired. Upgrade to a paid key at [townshipcanada.com/developers](https://townshipcanada.com/developers).
+**API returns 403**: Check API key permissions at [townshipcanada.com/developers](https://townshipcanada.com/developers).
 
-**API returns 429**: Your trial key has reached its usage limit. Upgrade to a paid key.
+**API returns 429**: Rate limit exceeded — reduce request frequency or contact support.
 
 **Coordinates not updating in feature layer**: Verify the ArcGIS token has edit permissions on the feature layer. Tokens expire — consider using an OAuth app for long-lived access.
 

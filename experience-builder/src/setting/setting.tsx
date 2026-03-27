@@ -21,13 +21,6 @@ export default class Setting extends React.PureComponent<
     })
   }
 
-  private onIsTrialKeyChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    this.props.onSettingChange({
-      id: this.props.id,
-      config: this.props.config.set('isTrialKey', e.target.checked)
-    })
-  }
-
   private onShowBoundariesChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     this.props.onSettingChange({
       id: this.props.id,
@@ -96,18 +89,6 @@ export default class Setting extends React.PureComponent<
             />
           )}
         </div>
-
-        {/* Trial key toggle */}
-        <Label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Switch
-            checked={config.isTrialKey ?? defaultConfig.isTrialKey}
-            onChange={this.onIsTrialKeyChange}
-          />
-          Using a trial API key
-        </Label>
-        <p style={{ fontSize: 11, color: '#6b7280', marginTop: -8 }}>
-          Enable this if you are using a free trial key. Trial keys use a different API endpoint.
-        </p>
 
         {/* Map Widget */}
         <div>

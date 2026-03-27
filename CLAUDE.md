@@ -13,8 +13,7 @@ Multi-platform suite that converts Canadian legal land descriptions (DLS, NTS, G
 ## Key Conventions
 
 - API key passed as `X-API-Key` header (never URL param)
-- Trial endpoint: `https://townshipcanada.com/api/integrations/trial`
-- Paid endpoint: `https://developer.townshipcanada.com`
+- API endpoint: `https://developer.townshipcanada.com`
 - User-Agent: `townshipcanada-<platform>/<version>`
 - GeoJSON coordinates are `[longitude, latitude]`
 - Centroid is at index 1 in the features array

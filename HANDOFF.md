@@ -14,7 +14,7 @@ All three integration components are implemented and functional:
 
 ## Known Considerations
 
-- Trial vs paid API endpoints must be configured correctly (`isTrialKey` flag in ExB widget)
+- API endpoint is `https://developer.townshipcanada.com` — ensure the ExB widget is configured to use this URL
 - Centroid assumed at index 1 in GeoJSON features array -- fragile if API changes response order
 - Survey123 integration requires manual Make.com scenario setup (no native webhook support)
 - CI workflow exists at `.github/workflows/` but was removed from yaml count (0 detected by health audit -- verify if still active)

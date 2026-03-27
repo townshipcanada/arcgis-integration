@@ -10,7 +10,7 @@ import { JimuMapViewComponent, type JimuMapView } from 'jimu-arcgis'
 import { TextInput, Button, Loading, Alert, Label, Switch } from 'jimu-ui'
 import { SearchOutlined } from 'jimu-icons/outlined/editor/search'
 import { PinEsriOutlined } from 'jimu-icons/outlined/gis/pin-esri'
-import { type IMConfig, TRIAL_API_BASE_URL, PAID_API_BASE_URL } from '../config'
+import { type IMConfig, API_BASE_URL } from '../config'
 import Graphic from 'esri/Graphic'
 import Point from 'esri/geometry/Point'
 import Polygon from 'esri/geometry/Polygon'
@@ -184,19 +184,13 @@ export default class TownshipCanadaWidget extends React.PureComponent<
     }
   }
 
-  private getApiBaseUrl (): string {
-    const isTrialKey = this.props.config?.isTrialKey ?? true
-    return isTrialKey ? TRIAL_API_BASE_URL : PAID_API_BASE_URL
-  }
-
   private async apiRequest (endpoint: string, params: Record<string, string>): Promise<any> {
     const apiKey = this.props.config?.apiKey
     if (!apiKey) {
       throw new Error('API key not configured. Open widget settings to add your Township Canada API key.')
     }
 
-    const baseUrl = this.getApiBaseUrl()
-    const url = new URL(baseUrl + endpoint)
+    const url = new URL(API_BASE_URL + endpoint)
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.set(key, value)
     })

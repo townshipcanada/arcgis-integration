@@ -13,9 +13,7 @@ A custom widget for ArcGIS Experience Builder that lets users convert Canadian l
 ## Requirements
 
 - ArcGIS Experience Builder 1.14+
-- Township Canada API key — trial or paid:
-  - **Trial key** (free, 7 days): [get one here](https://townshipcanada.com/api/try?ref=arcgis-exb)
-  - **Paid key**: [townshipcanada.com/developers](https://townshipcanada.com/developers)
+- Township Canada API key — [townshipcanada.com/developers](https://townshipcanada.com/developers)
 
 ## Installation
 
@@ -63,8 +61,8 @@ After adding the widget to your experience:
 | Status | Meaning              | Action                                                  |
 | ------ | -------------------- | ------------------------------------------------------- |
 | 401    | Invalid API key      | Check that your API key is correct                     |
-| 403    | Trial expired        | Trial period ended — upgrade to a paid key              |
-| 429    | Trial limit reached  | Usage limit exceeded — upgrade or wait for next period  |
+| 403    | Forbidden            | Check API key permissions                               |
+| 429    | Rate limit exceeded  | Rate limit exceeded — reduce request frequency or contact support |
 
 ## License
 

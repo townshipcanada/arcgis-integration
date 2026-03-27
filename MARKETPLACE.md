@@ -80,7 +80,7 @@ Subscription — requires a Township Canada API key.
 | Professional | 10,000      | $100/mo |
 | Enterprise   | 100,000     | $500/mo |
 
-Free 7-day trial available at [townshipcanada.com/api/try?ref=arcgis](https://townshipcanada.com/api/try?ref=arcgis).
+API key required — get one at [townshipcanada.com/developers](https://townshipcanada.com/developers).
 
 ## Screenshots Required
 

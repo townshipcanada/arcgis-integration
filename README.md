@@ -52,17 +52,7 @@ Convert Canadian legal land descriptions (DLS, NTS, Geographic Townships) to GPS
 
 ## API Key
 
-All components require a Township Canada API key. Both trial and paid keys are supported.
-
-- **Trial key** (free, 7 days, 100 calls): [townshipcanada.com/api/try?ref=arcgis](https://townshipcanada.com/api/try?ref=arcgis)
-- **Paid key**: [townshipcanada.com/developers](https://townshipcanada.com/developers)
-
-| Tier         | Requests/mo | Price   |
-| ------------ | ----------- | ------- |
-| Trial        | 100         | Free    |
-| Starter      | 1,000       | $20/mo  |
-| Professional | 10,000      | $100/mo |
-| Enterprise   | 100,000     | $500/mo |
+All components require a Township Canada API key from [townshipcanada.com/developers](https://townshipcanada.com/developers).
 
 ## Environment Variables
 
