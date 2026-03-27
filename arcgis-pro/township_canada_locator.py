@@ -2,7 +2,7 @@
 Township Canada Locator for ArcGIS Pro.
 
 A custom geocoding locator role that converts Canadian legal land descriptions
-(DLS, NTS, Geographic Townships) to GPS coordinates using the Township Canada API.
+(DLS, NTS, Geographic Townships) to GPS coordinates using the Township Canada SDK.
 
 Integrates with ArcGIS Pro's Locate pane so users can search by legal land
 description directly from the search bar.
@@ -10,6 +10,7 @@ description directly from the search bar.
 Requirements:
     - ArcGIS Pro 3.2+ (tested up to 3.7)
     - Python 3.9+ (bundled with ArcGIS Pro)
+    - townshipcanada Python SDK (pip install townshipcanada)
     - Township Canada API key (https://townshipcanada.com/developers)
 """
 
@@ -18,20 +19,20 @@ import logging
 import os
 import re
 import time
-import urllib.request
-import urllib.error
-import urllib.parse
 
 import arcpy
+from townshipcanada import (
+    TownshipCanada,
+    NotFoundError,
+    RateLimitError,
+    AuthenticationError,
+)
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
-API_BASE_URL = "https://developer.townshipcanada.com"
-USER_AGENT = "townshipcanada-arcgis-pro/1.0.0"
 
 # Patterns that indicate a Canadian legal land description
 DLS_PATTERN = re.compile(
@@ -74,18 +75,14 @@ def _get_township_canada_api_key():
     return ""
 
 
-def _township_canada_api_request(endpoint, params=None):
-    """Make an authenticated GET request to the Township Canada API.
-
-    Args:
-        endpoint: API endpoint path (e.g., "/search/legal-location").
-        params: Dictionary of query parameters.
+def _get_client():
+    """Create and return a TownshipCanada SDK client.
 
     Returns:
-        Parsed JSON response as a dictionary.
+        TownshipCanada: Configured SDK client.
 
     Raises:
-        RuntimeError: If the API request fails.
+        RuntimeError: If no API key is configured.
     """
     api_key = _get_township_canada_api_key()
     if not api_key:
@@ -94,67 +91,7 @@ def _township_canada_api_request(endpoint, params=None):
             "Set the TOWNSHIP_CANADA_API_KEY environment variable or run "
             "the configuration tool."
         )
-
-    url = API_BASE_URL + endpoint
-    if params:
-        url += "?" + urllib.parse.urlencode(params)
-
-    req = urllib.request.Request(url)
-    req.add_header("X-API-Key", api_key)
-    req.add_header("User-Agent", USER_AGENT)
-    req.add_header("Accept", "application/json")
-
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(
-            f"Township Canada API error ({e.code}): {body}"
-        ) from e
-    except urllib.error.URLError as e:
-        raise RuntimeError(
-            f"Could not connect to Township Canada API: {e.reason}"
-        ) from e
-
-
-def _parse_township_canada_feature_collection(fc):
-    """Extract centroid coordinates and metadata from a GeoJSON FeatureCollection.
-
-    Args:
-        fc: GeoJSON FeatureCollection dict.
-
-    Returns:
-        Tuple of (longitude, latitude, legal_location, province, survey_system, boundary_geojson).
-    """
-    centroid = None
-    grid = None
-
-    for feature in fc.get("features", []):
-        props = feature.get("properties", {})
-        if props.get("shape") == "centroid":
-            centroid = feature
-        elif props.get("shape") == "grid":
-            grid = feature
-
-    if not centroid:
-        return None
-
-    coords = centroid["geometry"]["coordinates"]
-    props = centroid.get("properties", {})
-
-    boundary = None
-    if grid and grid.get("geometry"):
-        boundary = grid["geometry"]
-
-    return (
-        coords[0],  # longitude
-        coords[1],  # latitude
-        props.get("legal_location", ""),
-        props.get("province", ""),
-        props.get("survey_system", ""),
-        boundary,
-    )
+    return TownshipCanada(api_key)
 
 
 # ---------------------------------------------------------------------------
@@ -193,33 +130,27 @@ class TownshipCanadaLocator:
             return []
 
         try:
-            fc = _township_canada_api_request(
-                "/search/legal-location",
-                params={"location": location},
-            )
-        except RuntimeError as e:
+            client = _get_client()
+            search_result = client.search(location)
+        except (RuntimeError, AuthenticationError) as e:
             arcpy.AddWarning(str(e))
             return []
-
-        parsed = _parse_township_canada_feature_collection(fc)
-        if not parsed:
+        except NotFoundError:
             return []
 
-        lon, lat, legal_loc, province, survey_system, boundary = parsed
-
         result = {
-            "address": legal_loc,
+            "address": search_result.legal_location,
             "location": arcpy.PointGeometry(
-                arcpy.Point(lon, lat),
+                arcpy.Point(search_result.longitude, search_result.latitude),
                 arcpy.SpatialReference(4326),
             ),
             "score": 100,
             "attributes": {
-                "LegalLocation": legal_loc,
-                "Province": province,
-                "SurveySystem": survey_system,
-                "Latitude": lat,
-                "Longitude": lon,
+                "LegalLocation": search_result.legal_location,
+                "Province": search_result.province,
+                "SurveySystem": search_result.survey_system,
+                "Latitude": search_result.latitude,
+                "Longitude": search_result.longitude,
             },
         }
 
@@ -240,27 +171,19 @@ class TownshipCanadaLocator:
             return []
 
         try:
-            fc = _township_canada_api_request(
-                "/autocomplete/legal-location",
-                params={
-                    "location": text,
-                    "limit": min(max_suggestions, 10),
-                },
-            )
-        except RuntimeError:
+            client = _get_client()
+            suggestions = client.autocomplete(text, limit=min(max_suggestions, 10))
+        except (RuntimeError, AuthenticationError, NotFoundError):
             return []
 
-        suggestions = []
-        for feature in fc.get("features", []):
-            props = feature.get("properties", {})
-            legal_loc = props.get("legal_location", "")
-            if legal_loc:
-                suggestions.append({
-                    "text": legal_loc,
-                    "isCollection": False,
-                })
-
-        return suggestions
+        return [
+            {
+                "text": s.legal_location,
+                "isCollection": False,
+            }
+            for s in suggestions
+            if s.legal_location
+        ]
 
     def reverse_geocode(self, location):
         """Find the legal land description at given coordinates.
@@ -278,24 +201,18 @@ class TownshipCanadaLocator:
             lon, lat = location
 
         try:
-            fc = _township_canada_api_request(
-                "/search/coordinates",
-                params={"location": f"{lon},{lat}"},
-            )
-        except RuntimeError as e:
+            client = _get_client()
+            search_result = client.reverse(lon, lat)
+        except (RuntimeError, AuthenticationError) as e:
             arcpy.AddWarning(str(e))
             return None
-
-        parsed = _parse_township_canada_feature_collection(fc)
-        if not parsed:
+        except NotFoundError:
             return None
 
-        lon, lat, legal_loc, province, survey_system, boundary = parsed
-
         return {
-            "address": legal_loc,
-            "province": province,
-            "survey_system": survey_system,
+            "address": search_result.legal_location,
+            "province": search_result.province,
+            "survey_system": search_result.survey_system,
         }
 
 
@@ -398,15 +315,54 @@ class TownshipCanadaGeoprocessingTool:
             )
             arcpy.management.AddField(boundary_fc, "LegalLocation", "TEXT", field_length=100)
 
-        # Count rows for progress
+        # Collect all locations from the input table
         row_count = int(arcpy.management.GetCount(input_table)[0])
         arcpy.SetProgressor("step", "Converting legal land descriptions...", 0, row_count, 1)
 
-        # Process each row
+        locations = []
+        fields = [location_field]
+        with arcpy.da.SearchCursor(input_table, fields) as search_cursor:
+            for row in search_cursor:
+                loc = str(row[0]).strip() if row[0] else ""
+                locations.append(loc)
+
+        # Batch search using the SDK
+        client = _get_client()
+        valid_locations = [loc for loc in locations if loc]
+
+        batch_result = None
+        if valid_locations:
+            # Retry loop for rate limiting during batch
+            for attempt in range(4):
+                try:
+                    batch_result = client.batch_search(valid_locations, chunk_size=100)
+                    break
+                except RateLimitError as e:
+                    if attempt < 3:
+                        wait = e.retry_after if e.retry_after else 2 ** attempt
+                        logger.info(
+                            "Rate limited during batch search, retrying in %ds (attempt %d/3)",
+                            wait, attempt + 1,
+                        )
+                        time.sleep(wait)
+                    else:
+                        raise RuntimeError(
+                            f"Rate limited after {attempt + 1} attempts: {e}"
+                        ) from e
+                except AuthenticationError as e:
+                    raise RuntimeError(f"Authentication failed: {e}") from e
+
+        # Build a lookup from normalized legal location to SearchResult.
+        # batch_search only returns successful items, so match by legal_location.
+        result_map = {}
+        if batch_result:
+            for sr in batch_result.results:
+                # Index by normalized form for case-insensitive matching
+                result_map[sr.legal_location.strip().lower()] = sr
+
+        # Write results
         success_count = 0
         fail_count = 0
-
-        fields = [location_field]
         insert_fields = ["SHAPE@", "LegalLocation", "Province", "SurveySystem", "Latitude", "Longitude", "Status"]
 
         with arcpy.da.InsertCursor(output_fc, insert_fields) as insert_cursor:
@@ -417,67 +373,45 @@ class TownshipCanadaGeoprocessingTool:
                 )
 
             try:
-                with arcpy.da.SearchCursor(input_table, fields) as search_cursor:
-                    for row in search_cursor:
-                        location = str(row[0]).strip() if row[0] else ""
-                        arcpy.SetProgressorLabel(f"Converting: {location}")
+                for loc in locations:
+                    arcpy.SetProgressorLabel(f"Processing: {loc}")
 
-                        if not location:
-                            fail_count += 1
-                            arcpy.SetProgressorPosition()
-                            continue
-
-                        try:
-                            # Retry with exponential backoff on 429 (rate limit)
-                            fc = None
-                            for attempt in range(4):
-                                try:
-                                    fc = _township_canada_api_request(
-                                        "/search/legal-location",
-                                        params={"location": location},
-                                    )
-                                    break
-                                except RuntimeError as retry_err:
-                                    if "429" in str(retry_err) and attempt < 3:
-                                        wait = 2 ** attempt  # 1s, 2s, 4s
-                                        logger.info(
-                                            "Rate limited on '%s', retrying in %ds (attempt %d/3)",
-                                            location, wait, attempt + 1,
-                                        )
-                                        time.sleep(wait)
-                                    else:
-                                        raise
-                            parsed = _parse_township_canada_feature_collection(fc)
-
-                            if parsed:
-                                lon, lat, legal_loc, province, survey_system, boundary = parsed
-                                point = arcpy.PointGeometry(
-                                    arcpy.Point(lon, lat), sr
-                                )
-                                insert_cursor.insertRow([
-                                    point, legal_loc, province, survey_system,
-                                    lat, lon, "Success",
-                                ])
-                                success_count += 1
-
-                                # Add boundary polygon if available
-                                if boundary_cursor and boundary:
-                                    try:
-                                        geom = arcpy.AsShape(boundary, True)
-                                        boundary_cursor.insertRow([geom, legal_loc])
-                                    except Exception as e:
-                                        logger.warning(
-                                            "Skipping invalid boundary geometry for '%s': %s",
-                                            legal_loc, e,
-                                        )
-                            else:
-                                fail_count += 1
-
-                        except RuntimeError as e:
-                            messages.addWarningMessage(f"Failed to convert '{location}': {e}")
-                            fail_count += 1
-
+                    if not loc:
+                        fail_count += 1
                         arcpy.SetProgressorPosition()
+                        continue
+
+                    search_result = result_map.get(loc.strip().lower())
+                    if search_result:
+                        point = arcpy.PointGeometry(
+                            arcpy.Point(search_result.longitude, search_result.latitude), sr
+                        )
+                        insert_cursor.insertRow([
+                            point,
+                            search_result.legal_location,
+                            search_result.province,
+                            search_result.survey_system,
+                            search_result.latitude,
+                            search_result.longitude,
+                            "Success",
+                        ])
+                        success_count += 1
+
+                        # Add boundary polygon if available
+                        if boundary_cursor and search_result.boundary:
+                            try:
+                                boundary_geojson = search_result.boundary.model_dump()
+                                geom = arcpy.AsShape(boundary_geojson, True)
+                                boundary_cursor.insertRow([geom, search_result.legal_location])
+                            except Exception as e:
+                                logger.warning(
+                                    "Skipping invalid boundary geometry for '%s': %s",
+                                    search_result.legal_location, e,
+                                )
+                    else:
+                        fail_count += 1
+
+                    arcpy.SetProgressorPosition()
             finally:
                 if boundary_cursor:
                     del boundary_cursor
@@ -531,12 +465,12 @@ class ConfigureAPIKey:
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
 
-        # Validate the key
+        # Validate the key with a test search
         try:
-            _township_canada_api_request(
-                "/search/legal-location",
-                params={"location": "NW-36-42-3-W5"},
-            )
+            client = TownshipCanada(api_key)
+            client.search("NW-36-42-3-W5")
             messages.addMessage("API key configured and validated successfully.")
-        except RuntimeError as e:
+        except AuthenticationError:
+            messages.addWarningMessage("API key saved but validation failed: invalid API key.")
+        except Exception as e:
             messages.addWarningMessage(f"API key saved but validation failed: {e}")

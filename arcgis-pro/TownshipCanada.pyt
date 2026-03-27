@@ -22,8 +22,6 @@ from township_canada_locator import (
     ConfigureAPIKey,
     TownshipCanadaGeoprocessingTool,
     TownshipCanadaLocator,
-    _township_canada_api_request,
-    _parse_township_canada_feature_collection,
 )
 
 
