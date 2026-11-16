@@ -52,7 +52,7 @@ Convert Canadian legal land descriptions (DLS, NTS, Geographic Townships) to GPS
 
 ## API Key
 
-All components require a Township Canada API key from [townshipcanada.com/developers](https://townshipcanada.com/developers).
+All components require a Township Canada API key. Choose a plan on the [API plans page](https://townshipcanada.com/pricing?ref=arcgis#api-plans), then copy the key from your [developer portal](https://townshipcanada.com/app/api).
 
 ## Environment Variables
 
